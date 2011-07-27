@@ -1,3 +1,5 @@
+require 'digest/sha1'
+
 module Rack
   class Cookieless
     def initialize(app, options={})
@@ -8,7 +10,7 @@ module Rack
       options[:cache_store] || Rails.cache
     end
 
-    def session_id
+    def session_key
       (options[:session_id] || :session_id).to_s
     end
 
@@ -16,21 +18,26 @@ module Rack
       if support_cookie?(env)
         @app.call(env)
       else
-        _session_id = Rack::Utils.parse_query(env["QUERY_STRING"], "&")[session_id]
+        session_id = Rack::Utils.parse_query(env["QUERY_STRING"], "&")[session_key] || env["session_id"]
+        cache_id = Digest::SHA1.hexdigest session_id
 
-        cache_id = (_session_id + ip + browser + language).sha1
+        env["rack.session"] = cache_store.fetch(cache_id) { env["rack.session"] }
 
-        session = cache_store.fetch(cache_id) { {} }
+        status, header, body = @app.call(env)
 
-        #set env[rack.session]
+        body = process_body(body, session_id)
+        cache_store.write(cache_id, env["rack.session"])
 
-        @app.call(env)
-        # add session_id to links, form in body
-        # read env[rack.session] & save it to cache_store
+        [status, header, body]
       end
     end
 
+    def process_body(body, session_id)
+      ###
+    end
+
     def support_cookie?(env)
+      false
     end
   end
 end

@@ -1,6 +1,14 @@
 = cookieless
 
-Description goes here.
+== Install
+
+Add cookieless to your gemfile
+
+  gem :cookieless
+
+Add it as middleware to your application.rb
+
+  config.middleware.use Rack::Cookieless, :session_id => :s
 
 == Contributing to cookieless
  
