@@ -20,16 +20,20 @@ module Rack
       else
         session_id = Rack::Utils.parse_query(env["QUERY_STRING"], "&")[session_key].to_s
 
-        cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
-
-        env["rack.session"] = cache_store.fetch(cache_id) { env["rack.session"] }.dup if session_id.present?
+        if session_id.present?
+          cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
+          env["rack.session"].update(cache_store.fetch(cache_id) { env["rack.session"] })
+        end
 
         status, header, body = @app.call(env)
 
-        # session_id = env["rack.session"]["session_id"]
+        if session_id.blank?
+          session_id = env["rack.session"]["session_id"]
+          cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
+        end
 
         body = process_body(body, session_id)
-        cache_store.write(cache_id, env["rack.session"])
+        cache_store.write(cache_id, env["rack.session"].to_hash)
 
         [status, header, body]
       end
