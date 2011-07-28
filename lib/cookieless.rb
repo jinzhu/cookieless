@@ -32,8 +32,10 @@ module Rack
           cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
         end
 
-        response.body = process_body(response.body, session_id)
-        cache_store.write(cache_id, env["rack.session"].to_hash)
+        if response.respond_to?(:body)
+          response.body = process_body(response.body, session_id)
+          cache_store.write(cache_id, env["rack.session"].to_hash)
+        end
 
         [status, header, response]
       end
