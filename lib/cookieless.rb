@@ -29,6 +29,10 @@ module Rack
         cache_store.write(cache_id, env["rack.session"].to_hash)
 
 
+        if header["Location"]
+          header["Location"] = header["Location"] + "?#{session_key}=#{session_id}"
+        end
+
         if env['action_dispatch.request.path_parameters'][:format].to_s =~ /\A(html)?\Z/
           response.body = process_body(response.body, session_id) if response.respond_to?(:body)
         end
