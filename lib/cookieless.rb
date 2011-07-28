@@ -14,22 +14,15 @@ module Rack
       if support_cookie
         @app.call(env)
       else
-        ## get session_id from uri
-        session_id, cache_id = set_session_id(Rack::Utils.parse_query(env["QUERY_STRING"], "&")[session_key].to_s, env)
-
-        ## get session_id from referer
-        session_id, cache_id = set_session_id(Rack::Utils.parse_query((URI.parse(env['HTTP_REFERER']).query rescue nil))[session_key].to_s, env) if session_id.blank?
-
-        env["rack.session"].update(cache_store.fetch(cache_id) { env["rack.session"] }) if cache_id
+        session_id, session = get_session_by_query(env["QUERY_STRING"], env) || get_session_by_query((URI.parse(env['HTTP_REFERER']).query rescue nil), env)
+        env["rack.session"].update(session) if session
 
         status, header, response = @app.call(env)
 
-        session_id, cache_id = set_session_id(env["rack.session"]["session_id"], env) if session_id.blank?
-        cache_store.write(cache_id, env["rack.session"].to_hash)
+        session_id = save_session_by_id(session_id || env["rack.session"]["session_id"], env)
 
-        ## for 3xx redirect
+        ## fix 3xx redirect
         header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
-
         ## only process html page
         response.body = process_body(response.body, session_id) if env['action_dispatch.request.path_parameters'][:format].to_s =~ /\A(html)?\Z/ && response.respond_to?(:body)
 
@@ -46,8 +39,19 @@ module Rack
       (@options[:session_id] || :session_id).to_s
     end
 
-    def set_session_id(session_id, env)
-      [session_id, (session_id.present? ? Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"]) : nil)]
+    def get_session_by_query(query, env)
+      session_id = Rack::Utils.parse_query(query, "&")[session_key].to_s
+      return nil if session_id.blank?
+
+      cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
+      return nil unless Rails.cache.exist?(cache_id)
+      return [session_id, cache_store.read(cache_id)]
+    end
+
+    def save_session_by_id(session_id, env)
+      cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
+      cache_store.write(cache_id, env["rack.session"].to_hash)
+      session_id
     end
 
     def process_body(body, session_id)
