@@ -2,6 +2,7 @@ require 'digest/sha1'
 
 module Rack
   class Cookieless
+    attr_accessor :session_id, :cache_id
     def initialize(app, options={})
       @app, @options = app, options
     end
@@ -18,38 +19,29 @@ module Rack
       if support_cookie?(env)
         @app.call(env)
       else
-        session_id = Rack::Utils.parse_query(env["QUERY_STRING"], "&")[session_key].to_s
-
-        if session_id.present?
-          cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
-          env["rack.session"].update(cache_store.fetch(cache_id) { env["rack.session"] })
-        end
+        set_session_id(Rack::Utils.parse_query(env["QUERY_STRING"], "&")[session_key].to_s, env)
+        env["rack.session"].update(cache_store.fetch(@cache_id) { env["rack.session"] }) if @cache_id
 
         status, header, response = @app.call(env)
 
-        if session_id.blank?
-          session_id = env["rack.session"]["session_id"]
-          cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"])
-        end
+        set_session_id(env["rack.session"]["session_id"], env) if @session_id.blank?
+        cache_store.write(@cache_id, env["rack.session"].to_hash)
 
-        if response.respond_to?(:body)
-          response.body = process_body(response.body, session_id)
-          cache_store.write(cache_id, env["rack.session"].to_hash)
-        end
-
+        response.body = process_body(response.body) if response.respond_to?(:body)
         [status, header, response]
       end
     end
 
-    def process_body(body, session_id)
+    def set_session_id(session_id, env)
+      @session_id = session_id
+      @cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"] + env["REMOTE_ADDR"]) if @session_id.present?
+    end
+
+    def process_body(body)
       body_doc = Nokogiri::HTML(body)
-      #TODO: change hardcode "?_session_id"
-      body_doc.css("a").map { |a| a["href"] += "?_session_id=#{session_id}" if a["href"] }
-      body_doc.css("form").map do |form|
-        session_id_input = Nokogiri::XML::Node.new "input",body_doc
-        [["name","_session_id"], ["value", session_id], ["type", "hidden"]].map { |attr, value| session_id_input[attr] = value }
-        form.add_child(session_id_input)
-      end
+      #TODO: change hardcode "?session_id"
+      body_doc.css("a").map { |a| a["href"] += "?#{session_key}=#{@session_id}" if a["href"] }
+      body_doc.css("form").map { |form| form["action"] += "?#{session_key}=#{@session_id}" if form["action"] }
       body_doc.to_html
     end
 
