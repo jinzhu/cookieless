@@ -46,7 +46,7 @@ module Rack
     end
 
     def support_cookie?(env)
-      false
+      env["action_dispatch.cookies"].present?
     end
   end
 end
