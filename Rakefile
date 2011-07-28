@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "cookieless"
   gem.homepage = "http://github.com/jinzhu/cookieless"
   gem.license = "MIT"
-  gem.summary = %Q{rack middleware for cookieless devises}
-  gem.description = %Q{rack middleware for cookieless devises}
+  gem.summary = %Q{Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application}
+  gem.description = %Q{Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application}
   gem.email = "wosmvp@gmail.com"
   gem.authors = ["Jinzhu"]
   # dependencies defined in Gemfile

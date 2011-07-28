@@ -1,14 +1,20 @@
-= cookieless
+= Cookieless
 
-== Install
+  Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application
 
-Add cookieless to your gemfile
+
+== Setup Cookieless
+
+1, Add cookieless to your Gemfile
 
   gem :cookieless
 
-Add it as middleware to your application.rb
+2, Add it as middleware to your application.rb
 
-  config.middleware.use Rack::Cookieless, :session_id => :s
+  config.middleware.use Rack::Cookieless
+
+3, Enjoy it!
+
 
 == Contributing to cookieless
  
@@ -24,4 +30,3 @@ Add it as middleware to your application.rb
 
 Copyright (c) 2011 Jinzhu. See LICENSE.txt for
 further details.
-
