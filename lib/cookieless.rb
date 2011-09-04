@@ -20,12 +20,13 @@ module Rack
 
         status, header, response = @app.call(env)
 
-        session_id = save_session_by_id(session_id || env["rack.session"]["session_id"], env)
-
-        ## fix 3xx redirect
-        header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
-        ## only process html page
-        response.body = process_body(response.body, session_id) if response.respond_to?(:body)
+        if %w(css js).exclude?(env['action_dispatch.request.path_parameters'][:format].to_s)
+          session_id = save_session_by_id(session_id || env["rack.session"]["session_id"], env)
+          ## fix 3xx redirect
+          header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
+          ## only process html page
+          response.body = process_body(response.body, session_id) if response.respond_to?(:body)
+        end
 
         [status, header, response]
       end
