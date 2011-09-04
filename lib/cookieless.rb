@@ -9,19 +9,18 @@ module Rack
 
     def call(env)
       # have cookies or not
-      support_cookie = env["action_dispatch.cookies"].present?
+      support_cookie = env["HTTP_COOKIE"].present?
 
       if support_cookie
         @app.call(env)
       else
-        session_id, session = get_session_by_query(env["QUERY_STRING"], env) || get_session_by_query((URI.parse(env['HTTP_REFERER']).query rescue nil), env)
-
-        env["rack.session"].update(session) if session
+        session_id, cookies = get_cookies_by_query(env["QUERY_STRING"], env) || get_cookies_by_query((URI.parse(env['HTTP_REFERER']).query rescue nil), env)
+        env["HTTP_COOKIE"] = cookies if cookies
 
         status, header, response = @app.call(env)
 
         if %w(css js).exclude?(env['action_dispatch.request.path_parameters'][:format].to_s)
-          session_id = save_session_by_id(session_id || env["rack.session"]["session_id"], env)
+          session_id = save_cookies_by_session_id(session_id || env["rack.session"]["session_id"], env, header["Set-Cookie"])
           ## fix 3xx redirect
           header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
           ## only process html page
@@ -41,19 +40,22 @@ module Rack
       (@options[:session_id] || :session_id).to_s
     end
 
-    def get_session_by_query(query, env)
+    def get_cookies_by_query(query, env)
       session_id = Rack::Utils.parse_query(query, "&")[session_key].to_s
       return nil if session_id.blank?
 
-      cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"].to_s + env["REMOTE_ADDR"].to_s)
+      cache_id = generate_cookie_id(session_id, env)
       return nil unless Rails.cache.exist?(cache_id)
       return [session_id, cache_store.read(cache_id)]
     end
 
-    def save_session_by_id(session_id, env)
-      cache_id = Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"].to_s + env["REMOTE_ADDR"].to_s)
-      cache_store.write(cache_id, env["rack.session"].to_hash)
+    def save_cookies_by_session_id(session_id, env, cookie)
+      cache_store.write(generate_cookie_id(session_id, env), cookie)
       session_id
+    end
+
+    def generate_cookie_id(session_id, env)
+      Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"].to_s + env["REMOTE_ADDR"].to_s)
     end
 
     def process_body(body, session_id)

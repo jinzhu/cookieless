@@ -11,7 +11,7 @@
 
 2, Add it as middleware to your application.rb
 
-  config.middleware.use Rack::Cookieless
+  config.middleware.insert_before ActionDispatch::Cookies, Rack::Cookieless, :session_id => :si
 
 3, Enjoy it!
 
