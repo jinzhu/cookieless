@@ -45,7 +45,7 @@ module Rack
       return nil if session_id.blank?
 
       cache_id = generate_cookie_id(session_id, env)
-      return nil unless Rails.cache.exist?(cache_id)
+      return nil unless session_id.present? and Rails.cache.exist?(cache_id)
       return [session_id, cache_store.read(cache_id)]
     end
 
@@ -55,7 +55,7 @@ module Rack
     end
 
     def generate_cookie_id(session_id, env)
-      Digest::SHA1.hexdigest(session_id + env["HTTP_USER_AGENT"].to_s + env["REMOTE_ADDR"].to_s)
+      Digest::SHA1.hexdigest(session_id.to_s + env["HTTP_USER_AGENT"].to_s + env["REMOTE_ADDR"].to_s)
     end
 
     def process_body(body, session_id)
