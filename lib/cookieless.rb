@@ -19,7 +19,7 @@ module Rack
 
         status, header, response = @app.call(env)
 
-        if env['action_dispatch.request.path_parameters'] && %w(css js).exclude?(env['action_dispatch.request.path_parameters'][:format].to_s)
+        if env['action_dispatch.request.path_parameters'] && %w(css js xml).exclude?(env['action_dispatch.request.path_parameters'][:format].to_s)
           session_id = save_cookies_by_session_id(session_id || env["rack.session"]["session_id"], env, header["Set-Cookie"])
           ## fix 3xx redirect
           header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
