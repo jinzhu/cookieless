@@ -71,7 +71,7 @@ module Rack
     end
 
     def convert_url(u, session_id)
-      u = URI.parse(u)
+      u = URI.parse(URI.escape(u))
       u.query = Rack::Utils.build_query(Rack::Utils.parse_query(u.query).merge({session_key => session_id})) if u.scheme.blank? || u.scheme.to_s =~ /http/
       u.to_s
     end
