@@ -1,6 +1,5 @@
 require 'digest/sha1'
 require 'uri'
-require 'pry'
 
 module Rack
   class Cookieless
