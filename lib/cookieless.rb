@@ -10,8 +10,9 @@ module Rack
     def call(env)
       # have cookies or not
       support_cookie = env["HTTP_COOKIE"].present?
+      noconvert = @options[:noconvert].is_a?(Proc) ? @options[:noconvert].call(env) : false
 
-      if support_cookie
+      if support_cookie || noconvert
         @app.call(env)
       else
         session_id, cookies = get_cookies_by_query(env["QUERY_STRING"], env) || get_cookies_by_query((URI.parse(env['HTTP_REFERER']).query rescue nil), env)
@@ -24,7 +25,11 @@ module Rack
           ## fix 3xx redirect
           header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
           ## only process html page
-          response.body = process_body(response.body, session_id) if response.respond_to?(:body)
+          if response.respond_to?(:body)
+            response.body = process_body(response.body, session_id)
+          elsif response.is_a?(Array) and [ActionView::OutputBuffer,String].detect{ |klass| response[0].is_a?(klass)}
+            response[0] = process_body(response[0].to_s, session_id)
+          end
         end
 
         [status, header, response]

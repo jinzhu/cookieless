@@ -11,7 +11,9 @@
 
 2, Add it as middleware to your application.rb
 
-  config.middleware.insert_before ActionDispatch::Cookies, Rack::Cookieless, :session_id => :si
+  config.middleware.insert_before ActionDispatch::Cookies, Rack::Cookieless, :session_id => :si, :noconvert => proc {|env|
+    env["HTTP_USER_AGENT"].to_s =~ /Googlebot|bingbot/
+  }
 
 3, Enjoy it!
 
