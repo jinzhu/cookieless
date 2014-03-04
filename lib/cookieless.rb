@@ -21,11 +21,11 @@ module Rack
         status, header, response = @app.call(env)
 
         if env['action_dispatch.request.path_parameters'] && %w(css js xml).exclude?(env['action_dispatch.request.path_parameters'][:format].to_s)
-          session_id = save_cookies_by_session_id(session_id || env["rack.session"]["session_id"], env, header["Set-Cookie"])
+          session_id = save_cookies_by_session_id(session_id || rack_session_id(env), env, header["Set-Cookie"])
           ## fix 3xx redirect
           header["Location"] = convert_url(header["Location"], session_id) if header["Location"]
           ## only process html page
-          if !!(header["Content-Type"].to_s.downcase =~ /html/)
+          if session_id && !!(header["Content-Type"].to_s.downcase =~ /html/)
             if response.respond_to?(:body)
               if response.body.is_a?(Array) and [ActionView::OutputBuffer,String].detect{ |klass| response.body[0].is_a?(klass)}
                 response.body[0] = process_body(response.body[0].to_s, session_id)
@@ -43,12 +43,17 @@ module Rack
     end
 
     private
+
     def cache_store
       @options[:cache_store] || Rails.cache
     end
 
     def session_key
       (@options[:session_id] || :session_id).to_s
+    end
+
+    def rack_session_id(env)
+      env["rack.session"].try(:[], "session_id") or env["rack.session.options"].try(:[], :id)
     end
 
     def get_cookies_by_query(query, env)
