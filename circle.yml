@@ -1,0 +1,6 @@
+test:
+  override:
+    - bundle exec appraisal rake test
+dependencies:
+  post:
+    - bundle exec appraisal install
