@@ -1,40 +1,32 @@
 # -*- encoding: utf-8 -*-
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'rack/cookieless/version'
 
 Gem::Specification.new do |s|
-  s.name = "cookieless"
-  s.version = "0.2.4.3"
+  s.name             = "cookieless"
+  s.version          = Rack::Cookieless::VERSION
+  s.authors          = ["Jinzhu", "chrisboy333"]
+  s.date             = "2012-01-06"
+  s.summary          = "Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application"
+  s.description      = "Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application"
+  s.email            = "wosmvp@gmail.com"
+  s.homepage         = "http://github.com/jinzhu/cookieless"
+  s.licenses         = ["MIT"]
 
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Jinzhu", "chrisboy333"]
-  s.date = "2012-01-06"
-  s.description = "Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application"
-  s.email = "wosmvp@gmail.com"
+  s.files            = `git ls-files -z`.split("\x0")
   s.extra_rdoc_files = ["LICENSE.txt", "README.rdoc"]
-  s.files = ["LICENSE.txt", "README.rdoc"]
-  s.homepage = "http://github.com/jinzhu/cookieless"
-  s.licenses = ["MIT"]
-  s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.10"
-  s.summary = "Cookieless is a rack middleware to make your application works with cookie-less devices/browsers without change your application"
+  s.executables      = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
+  s.test_files       = s.files.grep(%r{^(test|spec|features)/})
+  s.require_paths    = ["lib"]
 
-  if s.respond_to? :specification_version then
-    s.specification_version = 3
+  s.add_runtime_dependency "nokogiri", ">= 0"
+  s.add_runtime_dependency "rails", ">= 3.1.0"
 
-    if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<nokogiri>, [">= 0"])
-      s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
-      s.add_development_dependency(%q<jeweler>, ["~> 1.6.4"])
-      s.add_development_dependency(%q<rcov>, [">= 0"])
-    else
-      s.add_dependency(%q<nokogiri>, [">= 0"])
-      s.add_dependency(%q<bundler>, ["~> 1.0.0"])
-      s.add_dependency(%q<jeweler>, ["~> 1.6.4"])
-      s.add_dependency(%q<rcov>, [">= 0"])
-    end
-  else
-    s.add_dependency(%q<nokogiri>, [">= 0"])
-    s.add_dependency(%q<bundler>, ["~> 1.0.0"])
-    s.add_dependency(%q<jeweler>, ["~> 1.6.4"])
-    s.add_dependency(%q<rcov>, [">= 0"])
-  end
+  s.add_development_dependency "bundler", "~> 1.5"
+  s.add_development_dependency "rake"
+  s.add_development_dependency "appraisal"
+  s.add_development_dependency "rack-test"
+  s.add_development_dependency "rspec"
+  s.add_development_dependency "rspec-mocks"
 end
