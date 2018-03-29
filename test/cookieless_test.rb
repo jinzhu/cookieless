@@ -15,6 +15,18 @@ RSpec.describe Rack::Cookieless, type: :feature do
 
   subject { last_response.original_headers['Location'] }
 
+  describe '#convert_url' do
+    context 'when url contains anchor' do
+      let(:redirect_url) { '/internal_redirect#anchor' }
+
+      subject { app.send(:convert_url, redirect_url, 'sessionid') }
+
+      it "doesn't escapes the hash in url" do
+        is_expected.to include redirect_url
+      end
+    end
+  end
+
   context 'when cookies are enabled' do
     let(:rack_env) { { 'HTTP_COOKIE' => 'some-cookie' } }
 

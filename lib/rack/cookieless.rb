@@ -117,7 +117,7 @@ module Rack
       if u.scheme.blank? || u.scheme.to_s =~ /http/
         u.query = Rack::Utils.build_query(Rack::Utils.parse_query(u.query).merge({session_key => session_id}))
       end
-      u.to_s
+      URI.unescape u.to_s
     end
 
     def external_url?(header, env)
